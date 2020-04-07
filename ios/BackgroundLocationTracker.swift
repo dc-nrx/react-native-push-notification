@@ -64,6 +64,10 @@ The request body structure is determined by `makeLocationDateDict` method.
 		setupLocationManager()
 	}
 		
+	@objc func stop() {
+		locationManager.stopMonitoringSignificantLocationChanges()
+		locationManager.allowsBackgroundLocationUpdates = false
+	}
 }
 
 //MARK:- Private
