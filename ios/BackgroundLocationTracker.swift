@@ -52,8 +52,10 @@ The request body structure is determined by `makeLocationDateDict` method.
 	*/
 	private var storedUnsentLocations = StoredProperty<[[String: String]]>(key: "LocationTracker.storedUnsentLocations")
 	
+	private var trackingEnabled = StoredProperty<Bool>(key: "LocationTracker.trackingEnabled")
+	
 	/**
-	Call the function on `application: didFinishLaunchingWithOptions:`.
+	Call the function whenever nesseccary; then to support background tracking you must call `continueIfAppropriate()` - see the doc.
 	*/
 	@objc func start(actionMinimumInterval: TimeInterval, url: NSURL, httpHeaders: [String: String]) {
 		
@@ -61,12 +63,30 @@ The request body structure is determined by `makeLocationDateDict` method.
 		self.url = url
 		self.httpHeaders = httpHeaders
 		
+		trackingEnabled.value = true
 		setupLocationManager()
 	}
+	
+	/**
+	Call this method in `application: didFinishLaunchingWithOptions:` to enable background location updates
+	If `start(...)` hasn't been called before, nothing will happen.
+	*/
+	@objc func continueIfAppropriate() {
 		
+		if let isEnabled = trackingEnabled.value,
+			isEnabled,
+			self.url != nil,
+			self.httpHeaders != nil {
+			
+			setupLocationManager()
+		}
+	}
+	
 	@objc func stop() {
 		locationManager.stopMonitoringSignificantLocationChanges()
 		locationManager.allowsBackgroundLocationUpdates = false
+		
+		trackingEnabled.value = false
 	}
 }
 
