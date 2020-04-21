@@ -51,7 +51,7 @@ The request body structure is determined by `makeLocationDateDict` method.
 	/**
 	Call the function whenever nesseccary; then to support background tracking you must call `continueIfAppropriate()` - see the doc.
 	*/
-	@objc func start(url: NSURL, httpHeaders: [String: String]) {
+	@objc func start(actionMinimumInterval: TimeInterval, url: NSURL, httpHeaders: [String: String]) {
 		
 		self.storedURLString.value = url.absoluteString
 		self.storedHTTPHeaders.value = httpHeaders
