@@ -20,11 +20,6 @@ The request body structure is determined by `makeLocationDateDict` method.
 	@objc static let shared = BackgroundLocationTracker()
 	
 	/**
-	The minimum time interval (in seconds) before repeated location track (with further send to the backend).
-	*/
-	var storedActionMinimumInterval = StoredProperty<TimeInterval>(key: "BackgroundLocationTracker.storedActionMinimumInterval")
-	
-	/**
 	A URL to send the update location request to.
 	*/
 	var storedURLString = StoredProperty<String>(key: "BackgroundLocationTracker.storedURLString")
@@ -56,9 +51,8 @@ The request body structure is determined by `makeLocationDateDict` method.
 	/**
 	Call the function whenever nesseccary; then to support background tracking you must call `continueIfAppropriate()` - see the doc.
 	*/
-	@objc func start(actionMinimumInterval: TimeInterval, url: NSURL, httpHeaders: [String: String]) {
+	@objc func start(url: NSURL, httpHeaders: [String: String]) {
 		
-		self.storedActionMinimumInterval.value = actionMinimumInterval
 		self.storedURLString.value = url.absoluteString
 		self.storedHTTPHeaders.value = httpHeaders
 		
@@ -72,6 +66,7 @@ The request body structure is determined by `makeLocationDateDict` method.
 	*/
 	@objc func continueIfAppropriate() {
 		
+//		Logger.log("continueIfAppropriate")
 		if let isEnabled = trackingEnabled.value,
 			isEnabled,
 			self.storedURLString.value != nil,
@@ -83,12 +78,12 @@ The request body structure is determined by `makeLocationDateDict` method.
 	
 	@objc func stop() {
 		
+//		Logger.log("stop")
 		locationManager.stopMonitoringSignificantLocationChanges()
 		locationManager.allowsBackgroundLocationUpdates = false
 		
 		storedURLString.value = nil
 		storedHTTPHeaders.value = nil
-		storedActionMinimumInterval.value = nil
 		storedUnsentLocations.value = nil
 		
 		trackingEnabled.value = false
@@ -99,6 +94,7 @@ The request body structure is determined by `makeLocationDateDict` method.
 private extension BackgroundLocationTracker {
 
 	func setupLocationManager() {
+//		Logger.log("setup manager")
 		locationManager.requestAlwaysAuthorization()
 		locationManager.allowsBackgroundLocationUpdates = true
 
@@ -112,12 +108,13 @@ private extension BackgroundLocationTracker {
 	The main function to trigger on location update
 	*/
 	func main(locations: [CLLocation]) {
-		if let lastActionDate = storedLastActionDate.value,
-		Date().timeIntervalSince(lastActionDate) < storedActionMinimumInterval.value ?? 0 {
-			// The last action has been performed less than `actionMinInterval` seconds ago.
-			return
-		}
+//		if let lastActionDate = storedLastActionDate.value,
+//		Date().timeIntervalSince(lastActionDate) < storedActionMinimumInterval.value ?? 0 {
+//			// The last action has been performed less than `actionMinInterval` seconds ago.
+//			return
+//		}
 		// Record the new location
+//		Logger.log("main")
 		if let lastLocation = locations.last {
 			appendToSavedLocations(lastLocation)
 			storedLastActionDate.value = Date()
@@ -139,6 +136,7 @@ private extension BackgroundLocationTracker {
 	Send all the saved locations to the specified `url` (see `makeTimeLocationDict` for the single "location" item structure).
 	*/
 	func sendSavedLocations() {
+//		Logger.log("send_1")
 		guard let urlString = storedURLString.value,
 			let url = URL(string: urlString),
 			var httpHeaders = storedHTTPHeaders.value else {
@@ -171,8 +169,10 @@ private extension BackgroundLocationTracker {
 				let httpResponse = response as? HTTPURLResponse,
 				200...299 ~= httpResponse.statusCode else {
 				// do nothing - try again later
+//				Logger.log("send_error \(error) response: \(response)")
 				return
 			}
+//			Logger.log("send_callback \(response)")
 			// Delete locations which has been sent
 			self.storedUnsentLocations.value = nil
 		})
